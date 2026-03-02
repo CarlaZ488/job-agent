@@ -1,8 +1,17 @@
+import os
 import sqlite3
+from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-DB_PATH = r"/mnt/data/job_agent/database/jobs.db"
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DB_PATH = ROOT / "database" / "jobs.db"
+DB_PATH = Path(os.environ.get("JOB_AGENT_DB_PATH", DEFAULT_DB_PATH))
+
+if not DB_PATH.exists():
+    st.error(f"Database file not found: {DB_PATH}")
+    st.info("Create/populate it first by running: `python ingestion/usajobs_api.py`")
+    st.stop()
 
 st.set_page_config(page_title="Job Agent Dashboard", layout="wide")
 st.title("Job Agent Dashboard")
@@ -19,11 +28,11 @@ status = st.multiselect(
     ["new","queued","applying","applied","interview","offer","rejected","archived"],
     default=["new","queued"]
 )
-track = st.multiselect("Track", ["data","software","it","mixed","unknown"], default=["data","software","it"])
+track = st.multiselect("Track", ["data","software","it","mixed","unknown"], default=["data","software","it","unknown"])
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    min_score = st.slider("Min match score", 0.0, 1.0, 0.55, 0.01)
+    min_score = st.slider("Min match score", 0.0, 1.0, 0.0, 0.01)
 with col2:
     max_distance = st.slider("Max distance (miles)", 0, 50, 18, 1)
 with col3:
@@ -36,7 +45,7 @@ q = f"""SELECT id, title, company, location_text, distance_miles, commute_minute
                 track, match_score, salary_suggested, posted_date, status, url
          FROM jobs
          WHERE status IN ({status_placeholders})
-           AND track IN ({track_placeholders})
+           AND (track IS NULL OR track IN ({track_placeholders}))
            AND (match_score IS NULL OR match_score >= ?)
            AND (distance_miles IS NULL OR distance_miles <= ?)
            AND (commute_minutes IS NULL OR commute_minutes <= ?)

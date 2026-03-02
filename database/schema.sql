@@ -40,3 +40,6 @@ CREATE TABLE IF NOT EXISTS applications (
 
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_track ON jobs(track);
+
+ALTER TABLE jobs ADD COLUMN source_url TEXT;
+ALTER TABLE jobs ADD COLUMN apply_url TEXT;
