@@ -1,0 +1,32 @@
+{
+  "data": [
+    "Designed and maintained scalable data ingestion and ETL pipelines in Microsoft Fabric using REST APIs, notebooks, and automated workflows to support analytics and reporting.",
+    "Implemented Bronze \u2192 Silver transformations with schema alignment, validation rules, and data quality checks to ensure reliable event-level datasets.",
+    "Developed automated pipeline monitoring and alerting systems to improve reliability and reduce ingestion failures.",
+    "Designed a full end-to-end tactical intelligence pipeline using automatic tracking data (25fps) and Smart Tagging phase annotations across 11 professional matches."
+  ],
+  "software": [
+    "Developing an AI-driven simulation in Unity (C#) with LLM and Reinforcement Learning for adaptive NPC behavior.",
+    "Implementing real-time Unity-Python communication for AI decision-making.",
+    "Designing a custom UI for agent monitoring and simulation control.",
+    "Optimizing reinforcement learning models for decision-making and resource management."
+  ],
+  "it": [
+    "Designing and implementing proximity warning systems using RFID to prevent on-site incidents.",
+    "Designed and implemented data processing applications for real-time BLE and RFID safety systems.",
+    "Implemented binary image classification using Convolutional Neural Networks (CNNs) in TensorFlow."
+  ],
+  "general": [
+    "Investigating the application of Computer Vision and Image Processing techniques, such as contours and bounding boxes in object detection, to discern image content for biodiversity research.",
+    "Developing chatbots for multiple departments",
+    "Deploying chatbots as web apps to Microsoft Teams",
+    "Implementing full-stack development for web app deployment",
+    "Developing Radio Frequency Identification (RFID)-based safety solutions for construction sites, including conducting technology reviews and feasibility studies.",
+    "Leading the integration of RFID technology for real-time tracking of equipment and personnel, enhancing safety management.",
+    "Analyzing site data to identify safety trends and improve workplace safety standards in construction.",
+    "Designed and implemented an automated Arduino-based data acquisition system using a servo-controlled calibration platform to collect high-resolution flex sensor resistance data.",
+    "Developed and evaluated multiple regression models (Linear, Polynomial, Random Forest, XGBoost, Gaussian Process Regression, and MLP) to predict bending angles from resistance values.",
+    "Implemented 5-fold cross-validation and comprehensive performance evaluation using MAE, MSE, RMSE, R\u00b2, and Adjusted R\u00b2.",
+    "Developed a cross-match Bayesian pattern detection framework (prevalence, lift, confidence scoring), identifying statistically significant vulnerability sequences (e.g., 2.66\u00d7 goal lift in transition phases)."
+  ]
+}

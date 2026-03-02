@@ -1,0 +1,159 @@
+{
+  "home_base": "Long Beach, CA",
+  "distance_rules_miles": {
+    "onsite_preferred_max": 7,
+    "absolute_max": 18,
+    "beyond_absolute_max": "remote_only"
+  },
+  "commute_rules_minutes": {
+    "max_tolerable": 90,
+    "borderline_start": 60,
+    "desperation_max": 120
+  },
+  "mode_preference": {
+    "within_7_miles": [
+      "onsite",
+      "remote",
+      "hybrid"
+    ],
+    "between_7_and_18_miles": [
+      "remote",
+      "hybrid",
+      "onsite"
+    ],
+    "beyond_18_miles": [
+      "remote"
+    ]
+  },
+  "tracks": {
+    "data": {
+      "enabled": true,
+      "weight": 1.0,
+      "title_keywords": [
+        "data engineer",
+        "analytics engineer",
+        "data analyst",
+        "data scientist",
+        "bi developer",
+        "business intelligence",
+        "reporting analyst"
+      ],
+      "skill_keywords": [
+        "sql",
+        "python",
+        "etl",
+        "elt",
+        "pipeline",
+        "lakehouse",
+        "microsoft fabric",
+        "power bi",
+        "warehouse",
+        "notebook",
+        "rest api",
+        "data quality",
+        "kpi",
+        "telemetry",
+        "experimentation",
+        "a/b"
+      ]
+    },
+    "software": {
+      "enabled": true,
+      "weight": 0.85,
+      "title_keywords": [
+        "programmer analyst",
+        "software engineer",
+        "software developer",
+        "backend engineer",
+        "full stack",
+        "application developer",
+        "junior software",
+        "associate software"
+      ],
+      "skill_keywords": [
+        "python",
+        "c#",
+        ".net",
+        "react",
+        "javascript",
+        "api",
+        "git",
+        "azure devops",
+        "unit testing"
+      ]
+    },
+    "it": {
+      "enabled": true,
+      "weight": 0.75,
+      "title_keywords": [
+        "systems analyst",
+        "systems administrator",
+        "it analyst",
+        "desktop support",
+        "service desk",
+        "help desk",
+        "it support",
+        "cloud support",
+        "support engineer",
+        "application support",
+        "production support"
+      ],
+      "skill_keywords": [
+        "azure",
+        "entra",
+        "intune",
+        "active directory",
+        "troubleshooting",
+        "tickets",
+        "network",
+        "windows",
+        "linux",
+        "sso",
+        "mfa"
+      ]
+    }
+  },
+  "seniority_rules": {
+    "include_internships": true,
+    "exclude_senior_roles": true,
+    "exclude_patterns": [
+      "senior",
+      "sr.",
+      "staff",
+      "principal",
+      "lead",
+      "manager"
+    ],
+    "allow_if_intern_or_junior": [
+      "intern",
+      "internship",
+      "junior",
+      "entry",
+      "associate",
+      "i",
+      "ii"
+    ]
+  },
+  "work_authorization": {
+    "citizenship": "US citizen",
+    "needs_sponsorship": false
+  },
+  "salary_strategy": {
+    "mode": "midpoint_if_range_else_market_median",
+    "round_to": 1000
+  },
+  "sources": {
+    "usajobs": {
+      "enabled": true
+    },
+    "linkedin_email_alerts": {
+      "enabled": true
+    },
+    "builtin_email_or_rss": {
+      "enabled": true
+    },
+    "greenhouse_lever_company_boards": {
+      "enabled": true
+    }
+  }
+}
