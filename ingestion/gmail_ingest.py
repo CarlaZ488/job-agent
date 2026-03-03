@@ -3,6 +3,7 @@ import re
 import json
 import base64
 import sqlite3
+import urllib.parse
 from datetime import datetime, timezone
 from typing import Optional, Iterable
 
@@ -38,6 +39,27 @@ DEFAULT_QUERIES = [
 
 
 URL_RE = re.compile(r"https?://[^\s<>()\"\']+")
+
+
+def unwrap_tracking_url(url: str) -> str:
+    """
+    Converts tracking wrapper URLs (e.g., awstrack.me/L0/https:%2F%2F...) into real URLs.
+    """
+    u = url.strip()
+
+    # Common pattern: .../L0/https:%2F%2Fbuiltin.com%2Fjob%2F...
+    m = re.search(r"/L\d+/(https:%2F%2F.+)$", u)
+    if m:
+        return urllib.parse.unquote(m.group(1))
+
+    # Some trackers use ?url= or redirect= params
+    parsed = urllib.parse.urlparse(u)
+    qs = urllib.parse.parse_qs(parsed.query)
+    for key in ["url", "redirect", "u", "target"]:
+        if key in qs and qs[key]:
+            return qs[key][0]
+
+    return u
 
 
 def utc_now_iso() -> str:
@@ -144,6 +166,10 @@ def extract_urls_from_message(msg: dict) -> list[str]:
         for u in URL_RE.findall(text):
             # strip common trailing punctuation
             u = u.rstrip(").,]>\"'")
+            u = unwrap_tracking_url(u)
+            # Canonicalize BuiltIn job pages to avoid duplicates from tracking params
+            if "builtin.com/job/" in u.lower():
+                u = u.split("?", 1)[0]
             urls.add(u)
 
     return sorted(urls)
@@ -175,6 +201,43 @@ def choose_best_job_url(urls: list[str]) -> Optional[str]:
 
     scored.sort(reverse=True, key=lambda x: x[0])
     return scored[0][1]
+
+
+def filter_job_urls(urls: list[str]) -> list[str]:
+    """
+    Keep only URLs that look like actual job postings.
+    """
+    keep = []
+    for u in urls:
+        ul = u.lower()
+
+        # Prefer explicit job patterns
+        if "linkedin.com/jobs/view/" in ul:
+            keep.append(u)
+            continue
+
+        if "builtin.com" in ul and ("/job/" in ul or "/jobs/" in ul):
+            keep.append(u)
+            continue
+
+        # ATS domains
+        if any(x in ul for x in [
+            "greenhouse.io", "boards.greenhouse.io", "jobs.lever.co",
+            "myworkdayjobs.com", "icims.com", "jobvite.com", "taleo.net",
+            "successfactors", "smartrecruiters.com", "bamboohr.com",
+            "governmentjobs.com", "neogov.com"
+        ]):
+            keep.append(u)
+            continue
+
+    # de-dupe while preserving order
+    seen = set()
+    out = []
+    for u in keep:
+        if u not in seen:
+            out.append(u)
+            seen.add(u)
+    return out
 
 
 def insert_job(con: sqlite3.Connection, source: str, title: str, company: str,
@@ -232,20 +295,17 @@ def run(queries: Optional[list[str]] = None, max_per_query: int = 50):
                 date_ = headers.get("date", "")
 
                 urls = extract_urls_from_message(msg)
-                source_url = choose_best_job_url(urls) or ""
-                apply_url = ""
-
-                # If we have a resolver module, try to upgrade aggregator URLs to canonical ATS.
-                if source_url and resolve_canonical_apply_url:
-                    try:
-                        resolved = resolve_canonical_apply_url(source_url)
-                        apply_url = resolved or ""
-                    except Exception:
-                        apply_url = ""
+                job_urls = filter_job_urls(urls)
+                job_urls = job_urls[:25]  # cap per email
 
                 # Minimal metadata from subject; improve later with site-specific parsing.
                 title, company = parse_title_company_from_subject(subject)
-                track, match_score = classify_track(title, "", tracks)
+                subject_lc = (subject or "").lower()
+                if subject_lc.startswith("new ") and " job matches" in subject_lc:
+                    # Provisional label for digest emails; enrichment should rescore from posting content.
+                    track, match_score = "unknown", None
+                else:
+                    track, match_score = classify_track(title, "", tracks)
 
                 # You can optionally detect source from the From header.
                 source = "gmail_alert"
@@ -254,21 +314,31 @@ def run(queries: Optional[list[str]] = None, max_per_query: int = 50):
                 elif "builtin" in from_.lower() or "built in" in from_.lower():
                     source = "builtin_email"
 
-                # We don't reliably get location from alert emails; leave blank for now.
-                insert_job(
-                    con=con,
-                    source=source,
-                    title=title,
-                    company=company,
-                    location_text="",
-                    source_url=source_url,
-                    apply_url=apply_url,
-                    track=track,
-                    match_score=match_score,
-                    posted_date=None,
-                )
+                for source_url in job_urls:
+                    apply_url = ""
+                    if source_url and resolve_canonical_apply_url:
+                        try:
+                            resolved = resolve_canonical_apply_url(source_url)
+                            apply_url = resolved or ""
+                        except Exception:
+                            apply_url = ""
 
-                mark_processed(con, msg_id)
+                    # We don't reliably get location from alert emails; leave blank for now.
+                    insert_job(
+                        con=con,
+                        source=source,
+                        title=title,
+                        company=company,
+                        location_text="",
+                        source_url=source_url,
+                        apply_url=apply_url,
+                        track=track,
+                        match_score=match_score,
+                        posted_date=None,
+                    )
+
+                if job_urls:
+                    mark_processed(con, msg_id)
 
         con.commit()
         print("Done. Inserted new jobs from Gmail alerts.")
