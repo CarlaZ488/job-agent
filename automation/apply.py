@@ -72,7 +72,7 @@ def main():
         return
 
     # Not implemented yet, but routed cleanly
-    if ats in {"lever", "workday", "governmentjobs"}:
+    if ats in {"lever", "governmentjobs"}:
         print(f"\n⚠️ Handler for {ats} not implemented yet.")
         print("Next step: we’ll add autofill for this ATS.\n")
         return
@@ -80,6 +80,11 @@ def main():
     if ats == "builtin":
         print("\n⚠️ This is a BuiltIn listing, not the company ATS.")
         print("Run enrichment again to try extracting apply_url.\n")
+        return
+    
+    if ats == "workday":
+        from automation.apply_workday import workday_fill
+        workday_fill(job_id=job["id"], headless=args.headless)
         return
 
     print("\n⚠️ Unknown ATS. Leaving job unchanged.\n")
