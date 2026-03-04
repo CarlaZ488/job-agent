@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import json
 import base64
@@ -6,6 +7,10 @@ import sqlite3
 import urllib.parse
 from datetime import datetime, timezone
 from typing import Optional, Iterable
+
+ROOT = os.path.dirname(os.path.dirname(__file__))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
 from scoring.matcher import classify_track
 from googleapiclient.discovery import build
@@ -21,7 +26,6 @@ except Exception:
     resolve_canonical_apply_url = None
 
 
-ROOT = os.path.dirname(os.path.dirname(__file__))
 DB_PATH = os.path.join(ROOT, "database", "jobs.db")
 CREDS_PATH = os.path.join(ROOT, "credentials.json")
 TOKEN_PATH = os.path.join(ROOT, "token.json")

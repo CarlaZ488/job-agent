@@ -133,6 +133,21 @@ def heuristic_company_from_og_site(html: str) -> str:
     return site
 
 
+def split_builtin_title_company(t: str):
+    # "Data Engineer - Allstate | Built In"
+    if not t:
+        return None, None
+    s = t.strip()
+    s = re.sub(r"\s*\|\s*Built\s*In\s*$", "", s, flags=re.IGNORECASE)
+    if " - " in s:
+        role, comp = s.split(" - ", 1)
+        role = role.strip()
+        comp = comp.strip()
+        if role and comp:
+            return role, comp
+    return None, None
+
+
 def enrich_url(url: str) -> dict:
     html = fetch_html(url)
     if not html:
@@ -180,7 +195,7 @@ def enrich_url(url: str) -> dict:
         "description": desc,
     }
     if builtin_apply:
-        out["apply_url"] = builtin_apply
+        out["apply_url"] = builtin_apply.replace("&amp;", "&")
     if builtin_source:
         out["source_url"] = builtin_source
     return out
@@ -192,15 +207,26 @@ def load_profile() -> dict:
 
 
 def select_needs_enrichment(con: sqlite3.Connection, limit: int = 25):
-    # Target “digest-ish” placeholders and missing fields
+    """
+    Incremental enrichment:
+    - Never enriched (enriched_at is NULL)
+    - Placeholder title
+    - Previously failed but retry attempts < 3
+    - Not explicitly marked closed
+    """
     return con.execute(
         """
-        SELECT id, url, source_url, apply_url, title, company, location_text, description
+        SELECT
+            id, url, source_url, apply_url, title, company, location_text, description,
+            enriched_at, enrich_status, COALESCE(enrich_attempts, 0)
         FROM jobs
-        WHERE
-          (title IS NULL OR title = '' OR title LIKE 'New %Job Matches%' OR title LIKE 'New %job matches%')
-          OR company IS NULL OR company = ''
-          OR location_text IS NULL OR location_text = ''
+        WHERE (status IS NULL OR status <> 'archived')
+          AND (availability_status IS NULL OR availability_status NOT IN ('closed', 'invalid'))
+          AND (
+                enriched_at IS NULL
+             OR title IS NULL OR title = '' OR title LIKE 'New %Job Matches%' OR title LIKE 'New %job matches%'
+             OR (enrich_status = 'failed' AND COALESCE(enrich_attempts, 0) < 3)
+          )
         ORDER BY scraped_at DESC
         LIMIT ?
         """,
@@ -232,7 +258,10 @@ def main(limit: int = 25):
         return
 
     updated = 0
-    for (job_id, url, source_url, apply_url, title, company, location_text, description) in rows:
+    for (
+        job_id, url, source_url, apply_url, title, company, location_text, description,
+        enriched_at, enrich_status, enrich_attempts
+    ) in rows:
         raw_target = apply_url or url or source_url
         target = unwrap_tracking_url(raw_target)
 
@@ -245,18 +274,75 @@ def main(limit: int = 25):
         if not target:
             continue
 
+        # Skip BuiltIn directory pages (not a job posting)
+        if target.rstrip("/").split("?", 1)[0].lower() == "https://builtin.com/jobs":
+            con.execute(
+                "UPDATE jobs SET enrich_status='skipped', availability_status='invalid', enriched_at=?, last_checked_at=? WHERE id=?",
+                (utc_now_iso(), utc_now_iso(), job_id),
+            )
+            con.commit()
+            print(f"Skipping #{job_id}: non-posting URL")
+            continue
+
         print(f"Enriching #{job_id}: {target}")
+
+        def mark_failed(msg: str):
+            con.execute(
+                "UPDATE jobs SET enrich_status='failed', enrich_attempts=?, enriched_at=? WHERE id=?",
+                (int(enrich_attempts) + 1, utc_now_iso(), job_id),
+            )
+            con.commit()
+            print(f"  - failed: {msg}")
+
+        def mark_closed():
+            now = utc_now_iso()
+            con.execute(
+                "UPDATE jobs SET availability_status='closed', last_checked_at=?, enrich_status='closed', enriched_at=? WHERE id=?",
+                (now, now, job_id),
+            )
+            con.commit()
+            print("  - marked closed/unavailable")
+
         try:
             data = enrich_url(target)
         except Exception as e:
-            print(f"  - failed: {e}")
+            mark_failed(str(e))
             continue
 
-        # If enrichment returns empty / useless, skip
+        # If the page looks unavailable, mark closed (best-effort)
+        if not data:
+            # empty fetch/parse often means 404/blocked; count as failure
+            mark_failed("empty parse result")
+            continue
+
+        # We'll stamp "ok" even if nothing changes, so we don't reprocess forever.
+        did_enrich_ok = True
+
         new_title = clean_text(data.get("title", "")) or ""
         new_company = clean_text(data.get("company", "")) or ""
         new_loc = clean_text(data.get("location_text", "")) or ""
         new_desc = clean_text(data.get("description", "")) or ""
+
+        role, comp = split_builtin_title_company(new_title)
+        if role and comp:
+            # Normalize title to role and fill company if missing.
+            new_title = role
+            if not new_company:
+                new_company = comp
+
+        # Lightweight unavailable-page detector based on parsed text.
+        unavailable_blob = f"{new_title} {new_desc}".lower()
+        if any(
+            phrase in unavailable_blob for phrase in (
+                "no longer accepting applications",
+                "no longer available",
+                "position has been filled",
+                "job not found",
+                "404",
+            )
+        ):
+            mark_closed()
+            continue
 
         # Only update if it improved something
         improved = {}
@@ -279,6 +365,10 @@ def main(limit: int = 25):
             improved["match_score"] = float(match_score)
 
         if improved:
+            improved["enriched_at"] = utc_now_iso()
+            improved["enrich_status"] = "ok"
+            improved["enrich_attempts"] = int(enrich_attempts) + 1
+
             # If enrichment extracted an apply_url, store it
             if data.get("apply_url"):
                 improved["apply_url"] = data["apply_url"]
@@ -294,6 +384,14 @@ def main(limit: int = 25):
             update_job(con, job_id, improved)
             con.commit()
             updated += 1
+
+        # If we didn't write anything, still stamp as enriched so it won't repeat.
+        if did_enrich_ok and not improved:
+            con.execute(
+                "UPDATE jobs SET enriched_at=?, enrich_status='ok', enrich_attempts=? WHERE id=?",
+                (utc_now_iso(), int(enrich_attempts) + 1, job_id),
+            )
+            con.commit()
 
         time.sleep(SLEEP_SECONDS)
 

@@ -3,23 +3,30 @@
     "full_name": "Carla Zuccarini",
     "email": "czuccarinidev@gmail.com",
     "phone": "(562) 508-1443",
-    "linkedin": "linkedin.com/in/carla-zuccarini"
+    "linkedin": "https://www.linkedin.com/in/carla-zuccarini",
+    "github": "https://github.com/CarlaZ488"
   },
+
   "work_authorization": {
     "authorized_to_work_us": "Yes",
     "require_sponsorship_now_or_future": "No",
     "citizenship": "US Citizen"
   },
+
   "availability": {
     "start_date": "2 weeks after offer (default)",
     "relocation": "No (Greater Long Beach / LAX area only)"
   },
-  "compensation": {
-    "strategy": "Use midpoint of posted range; otherwise use market median for title/location; user can override."
+
+  "resumes": {
+    "data": "C:\\Users\\carla\\Documents\\Resumes\\data_resume.pdf",
+    "it": "C:\\Users\\carla\\Documents\\Resumes\\it_resume.pdf",
+    "software": "C:\\Users\\carla\\Documents\\Resumes\\software_resume.pdf"
   },
+
   "common_questions": {
-    "why_this_role": "I\u2019m excited about this role because it blends building reliable systems with improving how teams make decisions. I\u2019ve built pipelines and automated ingestion and monitoring so stakeholders can trust the data and act quickly.",
-    "strengths": "Strong Python/SQL, practical Azure/Fabric experience, and a bias toward automation and clear documentation. I\u2019m comfortable collaborating with non-technical stakeholders.",
+    "why_this_role": "I’m excited about this role because it blends building reliable systems with improving how teams make decisions. I’ve built pipelines and automated ingestion and monitoring so stakeholders can trust the data and act quickly.",
+    "strengths": "Strong Python/SQL, practical Azure/Fabric experience, and a bias toward automation and clear documentation. I’m comfortable collaborating with non-technical stakeholders.",
     "project_proud_of": "An end-to-end ingestion + transformation workflow with validation/monitoring that made downstream reporting more reliable and reduced failures."
   }
 }
