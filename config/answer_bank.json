@@ -19,9 +19,12 @@
   },
 
   "resumes": {
-    "data": "C:\\Users\\carla\\Documents\\Resumes\\data_resume.pdf",
-    "it": "C:\\Users\\carla\\Documents\\Resumes\\it_resume.pdf",
-    "software": "C:\\Users\\carla\\Documents\\Resumes\\software_resume.pdf"
+    "data": "C:\\Users\\carla\\Documents\\Resumes\\Data\\Data-focused Resume Template.pdf",
+    "it": "C:\\Users\\carla\\Documents\\Resumes\\IT\\Resume Template for Help Desk_ IT Support.pdf",
+    "software": "C:\\Users\\carla\\Documents\\Resumes\\Software\\Software-focused Resume Template.pdf",
+    "ml": "C:\\Users\\carla\\Documents\\Resumes\\ML_AI\\ML_AI-focused Resume Template.pdf",
+    "ai": "C:\\Users\\carla\\Documents\\Resumes\\ML_AI\\ML_AI-focused Resume Template.pdf",
+    "default": "C:\\Users\\carla\\Documents\\Resumes\\Resume With All Qualifications.pdf"
   },
 
   "common_questions": {

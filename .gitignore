@@ -209,3 +209,13 @@ __marimo__/
 # Google Cloud
 credentials.json
 token.json
+
+# Screenshots
+artifacts/
+
+# Notes for myself
+Future_Architecture_Notes/
+
+# Workday creds
+.env
+config/workday_tenant_accounts.json
