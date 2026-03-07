@@ -219,3 +219,6 @@ Future_Architecture_Notes/
 # Workday creds
 .env
 config/workday_tenant_accounts.json
+
+# Generated resumes
+output/resumes/
